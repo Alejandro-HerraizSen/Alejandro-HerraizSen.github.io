@@ -3982,19 +3982,19 @@ input, select, textarea {
 			}
 			21%,
 			40% {
-			  content: "Mathmatician";
+			  content: "System Analysis Mathmatician";
 			}
 			41%,
 			60% {
-			  content: "Consultant";
+			  content: "Software Engineer";
 			}
 			61%,
 			80% {
-			  content: "Reader";
+			  content: "Skier, Swimmer, Runner";
 			}
 			81%,
 			100% {
-			  content: "Deportist";
+			  content: "Reaging and Film Enthusiast";
 			}
 		  }
 		  @keyframes typing {
