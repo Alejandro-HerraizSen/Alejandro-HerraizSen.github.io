@@ -22,7 +22,9 @@ section, summary, time, mark, audio, video {
 article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
 	display: block;}
-
+* {
+    cursor: url('/images/cursor.svg'), auto;
+}
 body {
 	line-height: 1;
 }
@@ -4124,4 +4126,4 @@ input, select, textarea {
 			font-weight: 300;
 			line-height: 22px;
 		  }
-		  
+		  /* Apply custom cursor to all elements */
