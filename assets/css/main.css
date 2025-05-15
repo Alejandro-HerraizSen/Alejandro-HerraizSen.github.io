@@ -4155,8 +4155,10 @@ input, select, textarea {
 
 /* Banner Content Style */
 .sticky-banner__content {
+    background-image: url("../images/pic01.jpg");
+    background-size: cover;
+    background-position: center;
     padding: 1rem;
-    background-color: #242943; /* Adjust as needed */
     color: #fff;
     text-align: center;
 }
