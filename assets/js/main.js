@@ -351,127 +351,97 @@ Util.toggleClass = function(el, className, bool) {
 };
 
 // ───────────────────────────────────────────────────────────────────────────
-// Sticky‐banner IIFE
+// Sticky-Banner IIFE
 // ───────────────────────────────────────────────────────────────────────────
 ;(function() {
-  var StickyBanner = function(element) {
-    this.element       = element;
-    this.offsetIn      = 0;
-    this.offsetOut     = 0;
-    this.targetIn      = element.getAttribute('data-target-in')
-                          ? document.querySelector(element.getAttribute('data-target-in'))
+  var StickyBanner = function(el) {
+    this.el          = el;
+    this.offsetIn    = 0;
+    this.offsetOut   = 0;
+    this.targetIn    = el.getAttribute('data-target-in')
+                          ? document.querySelector(el.getAttribute('data-target-in'))
                           : false;
-    this.targetOut     = element.getAttribute('data-target-out')
-                          ? document.querySelector(element.getAttribute('data-target-out'))
+    this.targetOut   = el.getAttribute('data-target-out')
+                          ? document.querySelector(el.getAttribute('data-target-out'))
                           : false;
-    this.reset         = 0;
-    this.dataElement   = element.getAttribute('data-scrollable-element')
-                          || element.getAttribute('data-element');
-    this.scrollElement = this.dataElement
+    this.resetCount  = 0;
+    this.dataElement = el.getAttribute('data-scrollable-element')
+                          || el.getAttribute('data-element');
+    this.scrollEl    = this.dataElement
                           ? document.querySelector(this.dataElement)
                           : window;
-    if (!this.scrollElement) this.scrollElement = window;
-    this.scrollingId = false;
-    getBannerOffsets(this);
-    initBanner(this);
+    if (!this.scrollEl) this.scrollEl = window;
+    this.busy = false;
+    this._calcOffsets();
+    this._init();
   };
 
-  function getBannerOffsets(el) {
-    el.offsetIn = 0;
-    var winTop = getScrollTop(el);
-    if (el.targetIn) {
-      var r = el.targetIn.getBoundingClientRect();
-      el.offsetIn = r.top + winTop + r.height;
-    }
-    var di = el.element.getAttribute('data-offset-in');
-    if (di) el.offsetIn += parseInt(di, 10);
+  StickyBanner.prototype._calcOffsets = function() {
+    var winTop = this._getScrollTop();
+    this.offsetIn  = this.targetIn
+      ? this.targetIn.getBoundingClientRect().top + winTop + this.targetIn.getBoundingClientRect().height
+      : 0;
+    var oI = this.el.getAttribute('data-offset-in');
+    if (oI) this.offsetIn += parseInt(oI,10);
 
-    el.offsetOut = 0;
-    if (el.targetOut) {
-      var r2 = el.targetOut.getBoundingClientRect();
-      el.offsetOut = r2.top + winTop - window.innerHeight;
-    }
-    var dout = el.element.getAttribute('data-offset-out');
-    if (dout) el.offsetOut += parseInt(dout, 10);
-  }
+    this.offsetOut = this.targetOut
+      ? this.targetOut.getBoundingClientRect().top + winTop - window.innerHeight
+      : 0;
+    var oO = this.el.getAttribute('data-offset-out');
+    if (oO) this.offsetOut += parseInt(oO,10);
+  };
 
-  function initBanner(el) {
-    resetBannerVisibility(el);
-    el.element.addEventListener('resize-banner', function() {
-      getBannerOffsets(el);
-      resetBannerVisibility(el);
+  StickyBanner.prototype._init = function() {
+    this._update();
+    this.el.addEventListener('resize-banner', () => {
+      this._calcOffsets();
+      this._update();
     });
-    el.element.addEventListener('scroll-banner', function() {
-      if (el.reset < 10) {
-        getBannerOffsets(el);
-        el.reset++;
+    this.el.addEventListener('scroll-banner', () => {
+      if (this.resetCount < 10) {
+        this._calcOffsets();
+        this.resetCount++;
       }
-      resetBannerVisibility(el);
+      this._update();
     });
-    if (el.dataElement && el.scrollElement) {
-      el.scrollElement.addEventListener('scroll', function() {
-        if (el.scrollingId) return;
-        el.scrollingId = true;
-        window.requestAnimationFrame(function() {
-          el.element.dispatchEvent(new CustomEvent('scroll-banner'));
-          el.scrollingId = false;
-        });
+    this.scrollEl.addEventListener('scroll', () => {
+      if (this.busy) return;
+      this.busy = true;
+      window.requestAnimationFrame(() => {
+        this.el.dispatchEvent(new CustomEvent('scroll-banner'));
+        this.busy = false;
       });
-    }
-  }
+    });
+  };
 
-  function resetBannerVisibility(el) {
-    var st   = getScrollTop(el),
-        show = (el.offsetIn <= st) && (el.offsetOut === 0 || st < el.offsetOut);
-    Util.toggleClass(el.element, 'sticky-banner--visible', show);
-  }
+  StickyBanner.prototype._update = function() {
+    var st = this._getScrollTop(),
+        show = st >= this.offsetIn && (this.offsetOut === 0 || st < this.offsetOut);
+    Util.toggleClass(this.el, 'sticky-banner--visible', show);
+  };
 
-  function getScrollTop(el) {
-    var st = el.scrollElement.scrollTop || document.documentElement.scrollTop;
-    if (!el.dataElement) st = window.scrollY || document.documentElement.scrollTop;
-    return st;
-  }
+  StickyBanner.prototype._getScrollTop = function() {
+    if (this.dataElement)
+      return this.scrollEl.scrollTop || document.documentElement.scrollTop;
+    return window.scrollY || document.documentElement.scrollTop;
+  };
 
-  var banners = document.getElementsByClassName('js-sticky-banner');
-  if (banners.length) {
-    for (var i = 0; i < banners.length; i++) {
-      new StickyBanner(banners[i]);
-    }
-
+  // initialize
+  var elems = document.getElementsByClassName('js-sticky-banner');
+  if (elems.length) {
+    Array.prototype.forEach.call(elems, el => new StickyBanner(el));
     var resizeEvt = new CustomEvent('resize-banner'),
         scrollEvt = new CustomEvent('scroll-banner'),
-        resizeTimer, scrolling;
-
-    window.addEventListener('resize', function() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {
-        dispatchAll(banners, resizeEvt);
+        rT;
+    window.addEventListener('resize', () => {
+      clearTimeout(rT);
+      rT = setTimeout(() => {
+        Array.prototype.forEach.call(elems, el => el.dispatchEvent(resizeEvt));
       }, 300);
     });
-
-    window.addEventListener('scroll', function() {
-      if (!scrolling) {
-        window.requestAnimationFrame
-          ? window.requestAnimationFrame(function() {
-              dispatchAll(banners, scrollEvt);
-              scrolling = false;
-            })
-          : setTimeout(function() {
-              dispatchAll(banners, scrollEvt);
-              scrolling = false;
-            }, 200);
-      }
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {
-        dispatchAll(banners, resizeEvt);
-      }, 300);
+    window.addEventListener('scroll', () => {
+      Array.prototype.forEach.call(elems, el => el.dispatchEvent(scrollEvt));
     });
-
-    function dispatchAll(coll, evt) {
-      for (var j = 0; j < coll.length; j++) {
-        coll[j].dispatchEvent(evt);
-      }
-    }
   }
 }());
 

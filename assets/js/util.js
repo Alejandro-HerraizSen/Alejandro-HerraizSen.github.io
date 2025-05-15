@@ -1,4 +1,26 @@
 // ───────────────────────────────────────────────────────────────────────────
+// Sticky-Banner Utility
+// ───────────────────────────────────────────────────────────────────────────
+if (typeof Util === 'undefined') window.Util = {};
+
+Util.addClass = function(el, className) {
+  var c = className.split(' ');
+  el.classList.add(c[0]);
+  if (c.length > 1) Util.addClass(el, c.slice(1).join(' '));
+};
+
+Util.removeClass = function(el, className) {
+  var c = className.split(' ');
+  el.classList.remove(c[0]);
+  if (c.length > 1) Util.removeClass(el, c.slice(1).join(' '));
+};
+
+Util.toggleClass = function(el, className, bool) {
+  if (bool) Util.addClass(el, className);
+  else      Util.removeClass(el, className);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // Utility functions (for Sticky Banner and others)
 // ───────────────────────────────────────────────────────────────────────────
 if (typeof Util === 'undefined') {
