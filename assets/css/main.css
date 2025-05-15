@@ -4155,10 +4155,15 @@ input, select, textarea {
 
 /* Banner Content Style */
 .sticky-banner__content {
-    background-image: url("../images/pic01.jpg");
+    background-image: url("../../images/pic01.jpg");
+    background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
-    padding: 1rem;
+    width: 100%;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
     color: #fff;
-    text-align: center;
 }
