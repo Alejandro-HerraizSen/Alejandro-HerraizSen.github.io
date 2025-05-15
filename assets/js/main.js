@@ -1,4 +1,3 @@
-
 (function($) {
 
 	var	$window = $(window),
@@ -326,5 +325,154 @@
 						$menu._hide();
 
 			});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Utility functions for Sticky Banner
+// ───────────────────────────────────────────────────────────────────────────
+if (typeof Util === 'undefined') {
+  function Util() {}
+}
+
+Util.addClass = function(el, className) {
+  var classList = className.split(' ');
+  el.classList.add(classList[0]);
+  if (classList.length > 1) Util.addClass(el, classList.slice(1).join(' '));
+};
+
+Util.removeClass = function(el, className) {
+  var classList = className.split(' ');
+  el.classList.remove(classList[0]);
+  if (classList.length > 1) Util.removeClass(el, classList.slice(1).join(' '));
+};
+
+Util.toggleClass = function(el, className, bool) {
+  if (bool) Util.addClass(el, className);
+  else    Util.removeClass(el, className);
+};
+
+// ───────────────────────────────────────────────────────────────────────────
+// Sticky‐banner IIFE
+// ───────────────────────────────────────────────────────────────────────────
+;(function() {
+  var StickyBanner = function(element) {
+    this.element       = element;
+    this.offsetIn      = 0;
+    this.offsetOut     = 0;
+    this.targetIn      = element.getAttribute('data-target-in')
+                          ? document.querySelector(element.getAttribute('data-target-in'))
+                          : false;
+    this.targetOut     = element.getAttribute('data-target-out')
+                          ? document.querySelector(element.getAttribute('data-target-out'))
+                          : false;
+    this.reset         = 0;
+    this.dataElement   = element.getAttribute('data-scrollable-element')
+                          || element.getAttribute('data-element');
+    this.scrollElement = this.dataElement
+                          ? document.querySelector(this.dataElement)
+                          : window;
+    if (!this.scrollElement) this.scrollElement = window;
+    this.scrollingId = false;
+    getBannerOffsets(this);
+    initBanner(this);
+  };
+
+  function getBannerOffsets(el) {
+    el.offsetIn = 0;
+    var winTop = getScrollTop(el);
+    if (el.targetIn) {
+      var r = el.targetIn.getBoundingClientRect();
+      el.offsetIn = r.top + winTop + r.height;
+    }
+    var di = el.element.getAttribute('data-offset-in');
+    if (di) el.offsetIn += parseInt(di, 10);
+
+    el.offsetOut = 0;
+    if (el.targetOut) {
+      var r2 = el.targetOut.getBoundingClientRect();
+      el.offsetOut = r2.top + winTop - window.innerHeight;
+    }
+    var dout = el.element.getAttribute('data-offset-out');
+    if (dout) el.offsetOut += parseInt(dout, 10);
+  }
+
+  function initBanner(el) {
+    resetBannerVisibility(el);
+    el.element.addEventListener('resize-banner', function() {
+      getBannerOffsets(el);
+      resetBannerVisibility(el);
+    });
+    el.element.addEventListener('scroll-banner', function() {
+      if (el.reset < 10) {
+        getBannerOffsets(el);
+        el.reset++;
+      }
+      resetBannerVisibility(el);
+    });
+    if (el.dataElement && el.scrollElement) {
+      el.scrollElement.addEventListener('scroll', function() {
+        if (el.scrollingId) return;
+        el.scrollingId = true;
+        window.requestAnimationFrame(function() {
+          el.element.dispatchEvent(new CustomEvent('scroll-banner'));
+          el.scrollingId = false;
+        });
+      });
+    }
+  }
+
+  function resetBannerVisibility(el) {
+    var st   = getScrollTop(el),
+        show = (el.offsetIn <= st) && (el.offsetOut === 0 || st < el.offsetOut);
+    Util.toggleClass(el.element, 'sticky-banner--visible', show);
+  }
+
+  function getScrollTop(el) {
+    var st = el.scrollElement.scrollTop || document.documentElement.scrollTop;
+    if (!el.dataElement) st = window.scrollY || document.documentElement.scrollTop;
+    return st;
+  }
+
+  var banners = document.getElementsByClassName('js-sticky-banner');
+  if (banners.length) {
+    for (var i = 0; i < banners.length; i++) {
+      new StickyBanner(banners[i]);
+    }
+
+    var resizeEvt = new CustomEvent('resize-banner'),
+        scrollEvt = new CustomEvent('scroll-banner'),
+        resizeTimer, scrolling;
+
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        dispatchAll(banners, resizeEvt);
+      }, 300);
+    });
+
+    window.addEventListener('scroll', function() {
+      if (!scrolling) {
+        window.requestAnimationFrame
+          ? window.requestAnimationFrame(function() {
+              dispatchAll(banners, scrollEvt);
+              scrolling = false;
+            })
+          : setTimeout(function() {
+              dispatchAll(banners, scrollEvt);
+              scrolling = false;
+            }, 200);
+      }
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        dispatchAll(banners, resizeEvt);
+      }, 300);
+    });
+
+    function dispatchAll(coll, evt) {
+      for (var j = 0; j < coll.length; j++) {
+        coll[j].dispatchEvent(evt);
+      }
+    }
+  }
+}());
 
 })(jQuery);
