@@ -445,4 +445,19 @@ Util.toggleClass = function(el, className, bool) {
   }
 }());
 
+// ───────────────────────────────────────────────────────────────────────────
+// Fade Section IIFE
+// ───────────────────────────────────────────────────────────────────────────
+;(function() {
+  var secs = document.querySelectorAll('.fade-section');
+  window.addEventListener('scroll', function() {
+    var y = window.scrollY;
+    secs.forEach(function(sec) {
+      var midpoint = sec.offsetTop + sec.offsetHeight / 2;
+      if (y > midpoint) sec.classList.add('faded');
+      else               sec.classList.remove('faded');
+    });
+  });
+})();
+
 })(jQuery);

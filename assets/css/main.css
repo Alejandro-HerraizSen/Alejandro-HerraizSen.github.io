@@ -4167,3 +4167,13 @@ input, select, textarea {
     padding: 0;
     color: #fff;
 }
+
+/* Fade‐out sections once scrolled past their midpoint */
+.fade-section {
+  opacity: 1;
+  transition: opacity 0.6s ease-out;
+}
+
+.fade-section.faded {
+  opacity: 0;
+}
